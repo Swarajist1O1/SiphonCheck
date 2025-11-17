@@ -1,0 +1,25 @@
+DIABETES DATASET CLEANING AND FEATURE ENGINEERING REPORT
+============================================================
+
+1. EDGE CASES DETECTED:
+   - Zero value issues in multiple columns
+   - Statistical outliers identified using IQR and Z-score methods
+   - Medical impossibilities flagged
+   - Multivariate outliers detected using Isolation Forest
+
+2. DATA CLEANING SUMMARY:
+   - Method used: moderate
+   - Samples removed: 5
+   - Percentage removed: 0.7%
+
+3. FEATURE ENGINEERING:
+   - New features created: 15
+   - Categories: BMI, Age, Glucose, Blood Pressure, Pregnancy Risk
+   - Composite scores: Health Risk, Metabolic Syndrome
+   - Interactions: BMI×Age, Glucose/BMI, Pregnancies/Age
+   - Transformations: Log transformations, Polynomial features
+
+4. DATASET COMPARISON:
+   - Original shape: (768, 9)
+   - Final shape: (763, 24)
+   - Feature improvement: +167%

@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prediction Result - Diabetes Risk Assessment</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .result-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            margin: 20px auto;
+            max-width: 900px;
+        }
+        
+        .header-section {
+            padding: 30px;
+            border-radius: 20px 20px 0 0;
+            text-align: center;
+            color: white;
+        }
+        
+        .header-positive {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+        }
+        
+        .header-negative {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+        }
+        
+        .result-section {
+            padding: 40px;
+        }
+        
+        .prediction-card {
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .prediction-positive {
+            background: linear-gradient(135deg, #ffebee 0%, #fce4ec 100%);
+            border: 2px solid #ff6b6b;
+        }
+        
+        .prediction-negative {
+            background: linear-gradient(135deg, #e8f5e8 0%, #f1f8e9 100%);
+            border: 2px solid #4CAF50;
+        }
+        
+        .probability-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+        
+        .progress-bar-custom {
+            height: 20px;
+            border-radius: 10px;
+        }
+        
+        .input-summary {
+            background: #ffffff;
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .metric-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .metric-item:last-child {
+            border-bottom: none;
+        }
+        
+        .metric-label {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .metric-value {
+            font-weight: 700;
+            color: #4CAF50;
+        }
+        
+        .btn-group-custom {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+        
+        .btn-custom {
+            padding: 12px 30px;
+            border-radius: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: none;
+        }
+        
+        .btn-primary-custom {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+        }
+        
+        .btn-secondary-custom {
+            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+            color: white;
+        }
+        
+        .btn-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+            color: white;
+        }
+        
+        .confidence-indicator {
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        
+        .confidence-high {
+            background: rgba(76, 175, 80, 0.1);
+            color: #4CAF50;
+        }
+        
+        .confidence-medium {
+            background: rgba(255, 152, 0, 0.1);
+            color: #ff9800;
+        }
+        
+        .confidence-low {
+            background: rgba(244, 67, 54, 0.1);
+            color: #f44336;
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark" style="background: rgba(0,0,0,0.1);">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('home') }}">
+                <i class="fas fa-heartbeat"></i> Diabetes Predictor
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{{ url_for('home') }}">
+                    <i class="fas fa-home"></i> Home
+                </a>
+                <a class="nav-link" href="{{ url_for('about') }}">
+                    <i class="fas fa-info-circle"></i> About
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="result-container">
+            {% if prediction['prediction'] == 1 %}
+                <div class="header-section header-positive">
+                    <h1><i class="fas fa-exclamation-triangle"></i> Risk Assessment Result</h1>
+                    <p class="mb-0">Based on the provided health information</p>
+                </div>
+            {% else %}
+                <div class="header-section header-negative">
+                    <h1><i class="fas fa-check-circle"></i> Risk Assessment Result</h1>
+                    <p class="mb-0">Based on the provided health information</p>
+                </div>
+            {% endif %}
+            
+            <div class="result-section">
+                <!-- Main Prediction Result -->
+                {% if prediction['prediction'] == 1 %}
+                    <div class="prediction-card prediction-positive">
+                        <div class="d-flex align-items-center justify-content-center mb-3">
+                            <h2 class="text-danger mb-0">
+                                <i class="fas fa-exclamation-circle fa-2x"></i>
+                            </h2>
+                            <span class="confidence-indicator confidence-{{ 'high' if prediction['confidence'] > 0.8 else 'medium' if prediction['confidence'] > 0.6 else 'low' }}">
+                                {{ "%.1f" | format(prediction['confidence'] * 100) }}% Confidence
+                            </span>
+                        </div>
+                        <h3 class="text-danger">Higher Risk Detected</h3>
+                        <p class="lead">The AI model indicates a higher risk of diabetes based on your health profile. Please consult with a healthcare professional for proper evaluation and guidance.</p>
+                    </div>
+                {% else %}
+                    <div class="prediction-card prediction-negative">
+                        <div class="d-flex align-items-center justify-content-center mb-3">
+                            <h2 class="text-success mb-0">
+                                <i class="fas fa-check-circle fa-2x"></i>
+                            </h2>
+                            <span class="confidence-indicator confidence-{{ 'high' if prediction['confidence'] > 0.8 else 'medium' if prediction['confidence'] > 0.6 else 'low' }}">
+                                {{ "%.1f" | format(prediction['confidence'] * 100) }}% Confidence
+                            </span>
+                        </div>
+                        <h3 class="text-success">Lower Risk Detected</h3>
+                        <p class="lead">The AI model indicates a lower risk of diabetes based on your health profile. Continue maintaining a healthy lifestyle for optimal health.</p>
+                    </div>
+                {% endif %}
+                
+                <!-- Probability Details -->
+                <div class="probability-section">
+                    <h4><i class="fas fa-chart-bar"></i> Detailed Risk Analysis</h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="fw-bold text-success">No Diabetes Risk</span>
+                                    <span class="fw-bold">{{ "%.1f" | format(prediction['probability_no_diabetes'] * 100) }}%</span>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar bg-success progress-bar-custom" role="progressbar" 
+                                         style="width: {{ prediction['probability_no_diabetes'] * 100 }}%" 
+                                         aria-valuenow="{{ prediction['probability_no_diabetes'] * 100 }}" 
+                                         aria-valuemin="0" aria-valuemax="100">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="fw-bold text-danger">Diabetes Risk</span>
+                                    <span class="fw-bold">{{ "%.1f" | format(prediction['probability_diabetes'] * 100) }}%</span>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar bg-danger progress-bar-custom" role="progressbar" 
+                                         style="width: {{ prediction['probability_diabetes'] * 100 }}%" 
+                                         aria-valuenow="{{ prediction['probability_diabetes'] * 100 }}" 
+                                         aria-valuemin="0" aria-valuemax="100">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Input Summary -->
+                <div class="input-summary">
+                    <h4><i class="fas fa-clipboard-list"></i> Your Health Profile</h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="metric-item">
+                                <span class="metric-label"><i class="fas fa-baby text-muted me-2"></i>Pregnancies:</span>
+                                <span class="metric-value">{{ input_data['Pregnancies'] | int }}</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label"><i class="fas fa-tint text-muted me-2"></i>Glucose:</span>
+                                <span class="metric-value">{{ input_data['Glucose'] | int }} mg/dL</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label"><i class="fas fa-heart text-muted me-2"></i>Blood Pressure:</span>
+                                <span class="metric-value">{{ input_data['BloodPressure'] | int }} mmHg</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label"><i class="fas fa-ruler text-muted me-2"></i>Skin Thickness:</span>
+                                <span class="metric-value">{{ input_data['SkinThickness'] | int }} mm</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="metric-item">
+                                <span class="metric-label"><i class="fas fa-syringe text-muted me-2"></i>Insulin:</span>
+                                <span class="metric-value">{{ input_data['Insulin'] | int }} μU/mL</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label"><i class="fas fa-weight text-muted me-2"></i>BMI:</span>
+                                <span class="metric-value">{{ "%.1f" | format(input_data['BMI']) }} kg/m²</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label"><i class="fas fa-dna text-muted me-2"></i>Pedigree Function:</span>
+                                <span class="metric-value">{{ "%.3f" | format(input_data['DiabetesPedigreeFunction']) }}</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label"><i class="fas fa-calendar-alt text-muted me-2"></i>Age:</span>
+                                <span class="metric-value">{{ input_data['Age'] | int }} years</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Important Disclaimer -->
+                <div class="alert alert-warning mt-4">
+                    <h5><i class="fas fa-exclamation-triangle"></i> Important Disclaimer</h5>
+                    <p class="mb-0">
+                        <strong>This is an AI-based risk assessment tool and not a medical diagnosis.</strong> 
+                        The results are based on statistical patterns and should not replace professional medical advice. 
+                        Please consult with a qualified healthcare professional for proper medical evaluation, 
+                        diagnosis, and treatment recommendations.
+                    </p>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="btn-group-custom">
+                    <a href="{{ url_for('home') }}" class="btn btn-primary-custom">
+                        <i class="fas fa-redo"></i> New Prediction
+                    </a>
+                    <button onclick="window.print()" class="btn btn-secondary-custom">
+                        <i class="fas fa-print"></i> Print Results
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Print-friendly styling
+        window.addEventListener('beforeprint', function() {
+            document.body.style.background = 'white';
+        });
+        
+        window.addEventListener('afterprint', function() {
+            document.body.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+        });
+        
+        // Auto-scroll to results
+        window.addEventListener('load', function() {
+            document.querySelector('.prediction-card').scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'center' 
+            });
+        });
+    </script>
+</body>
+</html>
