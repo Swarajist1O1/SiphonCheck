@@ -29,25 +29,19 @@ class DiabetesPredictionModel:
         self.is_trained = False
         
     def load_or_train_model(self):
-        """Load existing model or train a new one."""
-        model_path = 'diabetes_model.pkl'
-        scaler_path = 'diabetes_scaler.pkl'
+        """Load the massive synthetic data model."""
+        model_path = 'diabetes_massive_model.pkl'
+        scaler_path = 'diabetes_massive_scaler.pkl'
         
         try:
             if os.path.exists(model_path) and os.path.exists(scaler_path):
-                print("📂 Loading existing model...")
+                print("📂 Loading massive synthetic data model...")
                 self.model = joblib.load(model_path)
                 self.scaler = joblib.load(scaler_path)
                 
-                # Set feature names based on available data
-                if os.path.exists('diabetes_noise_synthetic.csv'):
-                    df = pd.read_csv('diabetes_noise_synthetic.csv')
-                elif os.path.exists('diabetes_cleaned_engineered.csv'):
-                    df = pd.read_csv('diabetes_cleaned_engineered.csv')
-                else:
-                    df = pd.read_csv('diabetes.csv')
-                
-                self.feature_names = [col for col in df.columns if col != 'Outcome']
+                # Set feature names for original diabetes dataset (8 features)
+                self.feature_names = ['Pregnancies', 'Glucose', 'BloodPressure', 'SkinThickness', 
+                                    'Insulin', 'BMI', 'DiabetesPedigreeFunction', 'Age']
                 self.is_trained = True
                 print(f"✅ Model loaded successfully! Features: {len(self.feature_names)}")
             else:
@@ -151,13 +145,12 @@ class DiabetesPredictionModel:
             
             # Make prediction
             prediction = self.model.predict(input_scaled)[0]
-            probability = self.model.predict_proba(input_scaled)[0]
             
+            # Simple yes/no result
             return {
                 'prediction': int(prediction),
-                'probability_no_diabetes': float(probability[0]),
-                'probability_diabetes': float(probability[1]),
-                'confidence': float(max(probability))
+                'simple_answer': 'YES' if prediction == 1 else 'NO',
+                'prediction_text': 'YES - You may have diabetes' if prediction == 1 else 'NO - You likely do not have diabetes'
             }, None
             
         except Exception as e:
@@ -231,6 +224,8 @@ class DiabetesPredictionModel:
             print(f"Error in feature engineering: {e}")
             # Return original df if feature engineering fails
             return df
+    
+
 
 # Initialize the model
 predictor = DiabetesPredictionModel()
@@ -318,7 +313,9 @@ def about():
     model_info = {
         'is_trained': predictor.is_trained,
         'feature_count': len(predictor.feature_names) if predictor.feature_names else 0,
-        'model_type': 'Random Forest with Synthetic Data Enhancement'
+        'model_type': 'Multiple Logistic Regression with Massive Synthetic Data',
+        'accuracy': '88.26% (on synthetic data), 72.08% (on real data)',
+        'dataset_size': '2,468 samples (768 original + 1,700 synthetic)'
     }
     return render_template('about.html', model_info=model_info)
 
