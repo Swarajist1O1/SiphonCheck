@@ -4,7 +4,7 @@ Flask Web Application for Diabetes Prediction
 ============================================
 
 This web application provides an interactive interface for diabetes prediction
-using the optimized machine learning model with synthetic data enhancement.
+using the optimized machine learning model trained on cleaned Pima Indians diabetes data.
 """
 
 from flask import Flask, render_template, request, jsonify, flash, redirect, url_for
@@ -29,13 +29,13 @@ class DiabetesPredictionModel:
         self.is_trained = False
         
     def load_or_train_model(self):
-        """Load the massive synthetic data model."""
-        model_path = 'diabetes_massive_model.pkl'
-        scaler_path = 'diabetes_massive_scaler.pkl'
+        """Load the cleaned Pima Indians diabetes model."""
+        model_path = 'diabetes_logistic_model.pkl'
+        scaler_path = 'diabetes_logistic_scaler.pkl'
         
         try:
             if os.path.exists(model_path) and os.path.exists(scaler_path):
-                print("📂 Loading massive synthetic data model...")
+                print("📂 Loading diabetes prediction model...")
                 self.model = joblib.load(model_path)
                 self.scaler = joblib.load(scaler_path)
                 
@@ -53,12 +53,12 @@ class DiabetesPredictionModel:
             self.train_model()
             
     def train_model(self):
-        """Train the diabetes prediction model using the optimized synthetic dataset."""
+        """Train the diabetes prediction model using the cleaned Pima Indians dataset."""
         try:
-            # Try to load the optimized synthetic dataset
-            if os.path.exists('diabetes_noise_synthetic.csv'):
-                df = pd.read_csv('diabetes_noise_synthetic.csv')
-                print("📊 Using optimized synthetic dataset")
+            # Try to load the cleaned dataset
+            if os.path.exists('diabetes_cleaned_dataset.csv'):
+                df = pd.read_csv('diabetes_cleaned_dataset.csv')
+                print("📊 Using cleaned Pima Indians dataset")
             elif os.path.exists('diabetes_cleaned_engineered.csv'):
                 df = pd.read_csv('diabetes_cleaned_engineered.csv')
                 print("📊 Using cleaned and engineered dataset")
@@ -313,9 +313,9 @@ def about():
     model_info = {
         'is_trained': predictor.is_trained,
         'feature_count': len(predictor.feature_names) if predictor.feature_names else 0,
-        'model_type': 'Multiple Logistic Regression with Massive Synthetic Data',
-        'accuracy': '88.26% (on synthetic data), 72.08% (on real data)',
-        'dataset_size': '2,468 samples (768 original + 1,700 synthetic)'
+        'model_type': 'Multiple Logistic Regression (Pima Indians Dataset)',
+        'accuracy': '76.23% (test accuracy on cleaned data)',
+        'dataset_size': '768 samples from Pima Indians Diabetes Dataset'
     }
     return render_template('about.html', model_info=model_info)
 

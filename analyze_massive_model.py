@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Generate Feature Importance and Confusion Matrix for Massive Model
-Analyze the performance and characteristics of the massive synthetic data model
+Generate Feature Importance and Confusion Matrix for Diabetes Model
+Analyze the performance and characteristics of the diabetes prediction model
 """
 
 import pandas as pd
@@ -14,24 +14,24 @@ from sklearn.metrics import confusion_matrix, classification_report, accuracy_sc
 from sklearn.preprocessing import StandardScaler
 
 def analyze_massive_model():
-    """Analyze the massive model with feature importance and confusion matrix"""
+    """Analyze the diabetes prediction model with feature importance and confusion matrix"""
     print("="*70)
-    print("MASSIVE MODEL ANALYSIS - FEATURE IMPORTANCE & CONFUSION MATRIX")
+    print("DIABETES MODEL ANALYSIS - FEATURE IMPORTANCE & CONFUSION MATRIX")
     print("="*70)
     
-    # Load the massive model and scaler
-    print("Loading massive model...")
+    # Load the logistic regression model and scaler
+    print("Loading logistic regression model...")
     try:
-        model = joblib.load('diabetes_massive_model.pkl')
-        scaler = joblib.load('diabetes_massive_scaler.pkl')
-        print("✅ Model and scaler loaded successfully")
+        model = joblib.load('diabetes_logistic_model.pkl')
+        scaler = joblib.load('diabetes_logistic_scaler.pkl')
+        print("✅ Logistic regression model and scaler loaded successfully")
     except Exception as e:
         print(f"❌ Error loading model: {e}")
         return
     
-    # Load the massive dataset
-    print("\nLoading massive synthetic dataset...")
-    df_massive = pd.read_csv('diabetes_massive_synthetic.csv')
+    # Load the diabetes dataset
+    print("\nLoading diabetes dataset...")
+    df_massive = pd.read_csv('diabetes.csv')
     print(f"Dataset shape: {df_massive.shape}")
     print(f"Class distribution:\n{df_massive['Outcome'].value_counts()}")
     
@@ -58,47 +58,73 @@ def analyze_massive_model():
     accuracy = accuracy_score(y_test, y_pred)
     print(f"\nTest Accuracy: {accuracy:.4f} ({accuracy*100:.2f}%)")
     
-    # Feature Importance (Coefficients for Logistic Regression)
+    # Feature Importance (works for both Random Forest and Logistic Regression)
     print(f"\n" + "="*50)
-    print("FEATURE IMPORTANCE (LOGISTIC REGRESSION COEFFICIENTS)")
+    print("FEATURE IMPORTANCE")
     print("="*50)
     
-    coefficients = model.coef_[0]
-    intercept = model.intercept_[0]
-    
-    print(f"Intercept (β₀): {intercept:.4f}")
-    print(f"\nFeature Coefficients:")
-    
-    # Create feature importance DataFrame
-    feature_importance = pd.DataFrame({
-        'Feature': feature_names,
-        'Coefficient': coefficients,
-        'Abs_Coefficient': np.abs(coefficients)
-    }).sort_values('Abs_Coefficient', ascending=False)
+    # Check model type and get appropriate feature importance
+    if hasattr(model, 'feature_importances_'):
+        # Random Forest or other tree-based models
+        importances = model.feature_importances_
+        print(f"Model Type: {type(model).__name__}")
+        print(f"\nFeature Importances (Random Forest):")
+        
+        # Create feature importance DataFrame
+        feature_importance = pd.DataFrame({
+            'Feature': feature_names,
+            'Importance': importances,
+            'Abs_Importance': np.abs(importances)
+        }).sort_values('Abs_Importance', ascending=False)
+        
+    elif hasattr(model, 'coef_'):
+        # Logistic Regression
+        coefficients = model.coef_[0]
+        intercept = model.intercept_[0]
+        print(f"Model Type: {type(model).__name__}")
+        print(f"Intercept (β₀): {intercept:.4f}")
+        print(f"\nFeature Coefficients:")
+        
+        # Create feature importance DataFrame
+        feature_importance = pd.DataFrame({
+            'Feature': feature_names,
+            'Importance': coefficients,
+            'Abs_Importance': np.abs(coefficients)
+        }).sort_values('Abs_Importance', ascending=False)
+    else:
+        print("Model does not have feature importance or coefficients")
+        return
     
     print(feature_importance.to_string(index=False, float_format='%.4f'))
     
     # Plot Feature Importance
     plt.figure(figsize=(12, 8))
-    colors = ['red' if coef < 0 else 'green' for coef in feature_importance['Coefficient']]
-    bars = plt.bar(range(len(feature_importance)), feature_importance['Coefficient'], color=colors, alpha=0.7)
+    # For Random Forest, all importances are positive, so use single color
+    if hasattr(model, 'feature_importances_'):
+        colors = ['green'] * len(feature_importance)
+        bars = plt.bar(range(len(feature_importance)), feature_importance['Importance'], color=colors, alpha=0.7)
+    else:
+        # For Logistic Regression, use red/green for negative/positive coefficients
+        colors = ['red' if coef < 0 else 'green' for coef in feature_importance['Importance']]
+        bars = plt.bar(range(len(feature_importance)), feature_importance['Importance'], color=colors, alpha=0.7)
     
-    plt.title('Massive Model - Feature Coefficients (Importance)', fontsize=16, fontweight='bold')
+    model_name = type(model).__name__
+    plt.title(f'Diabetes Model - Feature Importance ({model_name})', fontsize=16, fontweight='bold')
     plt.xlabel('Features', fontsize=12)
-    plt.ylabel('Coefficient Value', fontsize=12)
+    plt.ylabel('Importance Value', fontsize=12)
     plt.xticks(range(len(feature_importance)), feature_importance['Feature'], rotation=45, ha='right')
     plt.grid(axis='y', alpha=0.3)
     
     # Add value labels on bars
-    for i, (bar, coef) in enumerate(zip(bars, feature_importance['Coefficient'])):
+    for i, (bar, importance_val) in enumerate(zip(bars, feature_importance['Importance'])):
         height = bar.get_height()
-        plt.text(bar.get_x() + bar.get_width()/2., height + (0.02 if height >= 0 else -0.05),
-                f'{coef:.3f}', ha='center', va='bottom' if height >= 0 else 'top', fontsize=10)
+        plt.text(bar.get_x() + bar.get_width()/2., height + 0.02,
+                f'{importance_val:.3f}', ha='center', va='bottom', fontsize=10)
     
     plt.tight_layout()
-    plt.savefig('massive_model_feature_importance.png', dpi=300, bbox_inches='tight')
+    plt.savefig('diabetes_model_feature_importance.png', dpi=300, bbox_inches='tight')
     plt.show()
-    print(f"\n✅ Feature importance plot saved as: massive_model_feature_importance.png")
+    print(f"\n✅ Feature importance plot saved as: diabetes_model_feature_importance.png")
     
     # Confusion Matrix
     print(f"\n" + "="*50)
@@ -140,7 +166,7 @@ def analyze_massive_model():
                 yticklabels=['Non-Diabetic', 'Diabetic'],
                 cbar_kws={'label': 'Count'})
     
-    plt.title('Massive Model - Confusion Matrix\n(Test Set Performance)', fontsize=16, fontweight='bold')
+    plt.title('Diabetes Model - Confusion Matrix\n(Test Set Performance)', fontsize=16, fontweight='bold')
     plt.ylabel('Actual Class', fontsize=12)
     plt.xlabel('Predicted Class', fontsize=12)
     
@@ -153,9 +179,9 @@ def analyze_massive_model():
                     ha='center', va='center', fontsize=10, color='darkred')
     
     plt.tight_layout()
-    plt.savefig('massive_model_confusion_matrix.png', dpi=300, bbox_inches='tight')
+    plt.savefig('diabetes_model_confusion_matrix.png', dpi=300, bbox_inches='tight')
     plt.show()
-    print(f"\n✅ Confusion matrix plot saved as: massive_model_confusion_matrix.png")
+    print(f"\n✅ Confusion matrix plot saved as: diabetes_model_confusion_matrix.png")
     
     # Classification Report
     print(f"\n" + "="*50)
@@ -163,55 +189,49 @@ def analyze_massive_model():
     print("="*50)
     print(classification_report(y_test, y_pred, target_names=['Non-Diabetic', 'Diabetic']))
     
-    # Mathematical Model
+    # Model Information
     print(f"\n" + "="*50)
-    print("MATHEMATICAL MODEL")
+    print("MODEL INFORMATION")
     print("="*50)
-    print(f"Logistic Regression Equation:")
-    print(f"P(Diabetes=1|X) = 1 / (1 + e^(-z))")
-    print(f"\nwhere z = {intercept:.4f}", end="")
-    for feature, coef in zip(feature_names, coefficients):
-        sign = "+" if coef >= 0 else ""
-        print(f" {sign}{coef:.4f}×{feature}", end="")
-    print()
+    print(f"Model Type: {type(model).__name__}")
     
-    # Test on Original Data
+    if hasattr(model, 'feature_importances_'):
+        print(f"Random Forest Details:")
+        print(f"  - Number of Trees: {model.n_estimators}")
+        print(f"  - Max Depth: {model.max_depth}")
+        print(f"  - Min Samples Split: {model.min_samples_split}")
+        print(f"  - Min Samples Leaf: {model.min_samples_leaf}")
+    elif hasattr(model, 'coef_'):
+        print(f"Logistic Regression Equation:")
+        print(f"P(Diabetes=1|X) = 1 / (1 + e^(-z))")
+        print(f"\nwhere z = {intercept:.4f}", end="")
+        for feature, coef in zip(feature_names, feature_importance['Importance']):
+            sign = "+" if coef >= 0 else ""
+            print(f" {sign}{coef:.4f}×{feature}", end="")
+        print()
+    
+    # Additional Performance Info
     print(f"\n" + "="*50)
-    print("PERFORMANCE ON ORIGINAL DATA")
+    print("MODEL PERFORMANCE SUMMARY")
     print("="*50)
     
-    # Load original dataset
-    df_original = pd.read_csv('diabetes_cleaned_only.csv')
-    X_orig = df_original.drop('Outcome', axis=1)
-    y_orig = df_original['Outcome']
-    
-    # Split original data the same way
-    _, X_orig_test, _, y_orig_test = train_test_split(
-        X_orig, y_orig, test_size=0.2, random_state=42, stratify=y_orig
-    )
-    
-    # Scale and predict
-    X_orig_test_scaled = scaler.transform(X_orig_test)
-    y_orig_pred = model.predict(X_orig_test_scaled)
-    orig_accuracy = accuracy_score(y_orig_test, y_orig_pred)
-    
-    print(f"Accuracy on Original Test Data: {orig_accuracy:.4f} ({orig_accuracy*100:.2f}%)")
-    print(f"Accuracy on Synthetic Test Data: {accuracy:.4f} ({accuracy*100:.2f}%)")
-    print(f"Difference: {accuracy - orig_accuracy:.4f} ({((accuracy - orig_accuracy)/orig_accuracy)*100:.2f}% relative)")
+    print(f"Test Accuracy: {accuracy:.4f} ({accuracy*100:.2f}%)")
+    print(f"Total Test Samples: {len(y_test)}")
+    print(f"Correct Predictions: {(y_pred == y_test).sum()}")
+    print(f"Incorrect Predictions: {(y_pred != y_test).sum()}")
     
     # Summary
     print(f"\n" + "="*70)
-    print("MASSIVE MODEL SUMMARY")
+    print("DIABETES MODEL SUMMARY")
     print("="*70)
-    print(f"Model Type: Multiple Logistic Regression")
-    print(f"Training Dataset: {df_massive.shape[0]:,} samples (768 original + {df_massive.shape[0]-768:,} synthetic)")
+    print(f"Model Type: {type(model).__name__}")
+    print(f"Training Dataset: {df_massive.shape[0]:,} samples")
     print(f"Features: {len(feature_names)}")
-    print(f"Test Accuracy (Synthetic Data): {accuracy:.4f} ({accuracy*100:.2f}%)")
-    print(f"Test Accuracy (Original Data): {orig_accuracy:.4f} ({orig_accuracy*100:.2f}%)")
-    print(f"Most Important Feature: {feature_importance.iloc[0]['Feature']} (coef: {feature_importance.iloc[0]['Coefficient']:.4f})")
+    print(f"Test Accuracy: {accuracy:.4f} ({accuracy*100:.2f}%)")
+    print(f"Most Important Feature: {feature_importance.iloc[0]['Feature']} (importance: {feature_importance.iloc[0]['Importance']:.4f})")
     print(f"Files Generated:")
-    print(f"  - massive_model_feature_importance.png")
-    print(f"  - massive_model_confusion_matrix.png")
+    print(f"  - diabetes_model_feature_importance.png")
+    print(f"  - diabetes_model_confusion_matrix.png")
 
 if __name__ == "__main__":
     analyze_massive_model()
